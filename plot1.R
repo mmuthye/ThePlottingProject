@@ -9,9 +9,7 @@ library(data.table)
 DatasetURL <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fhousehold_power_consumption.zip"
 DatasetZip <- "exdata_data_household_power_consumption.zip"
 DatasetFilename <- "household_power_consumption.txt" 
-FilterDate1 = "1/2/2007"
-FilterDate2 = "2/2/2007"
-
+DateFilter <- "^[1,2]/2/2007"   # Expression for dates: 1/2/2007 and 2/2/2007
 
 # Check if the dataset already exists / downloaded. If not, then download the file 
 if (!file.exists(DatasetFilename)) {
@@ -19,19 +17,19 @@ if (!file.exists(DatasetFilename)) {
         unzip(DatasetZip)
 } 
 
-# Load the Household Power Consumption (hpc) dataset
-hpc <- fread(file=DatasetFilename, header = TRUE, sep = "auto")
+# Load the Household Power Consumption (hpc) dataset. 
+# Below considerations are made:
+# 1. Instead of loading the entire dataset, rows with dates 1/2/2007 OR 2/2/2007 are filtered
+# 2. Column names are required to be set since the headers got filtered out due to #1 above
+# 3. na.strings set to ? since ? is indicating missing data
 
-# Define only the required subset of the dataset
-hpc_ds <- subset(hpc, Date == FilterDate1 | Date == FilterDate2)
+hpc_ds <- read.table(text = grep(DateFilter, readLines(DatasetFilename), value=TRUE), sep = ';', na.strings = '?', 
+                     col.names = c("Date", "Time", "Global_active_power", "Global_reactive_power", "Voltage", "Global_intensity", "Sub_metering_1", "Sub_metering_2", "Sub_metering_3"))
 
 # Convert the Time and Date columns from character to Date and Time formats.
 # Note: Time needs to be convered into Date Time function
 hpc_ds <- mutate(hpc_ds, Time = strptime(paste(Date, Time, sep = " "), "%d/%m/%Y %H:%M:%S"))
-hpchpc_ds <- mutate(hpc_ds, Date = as.Date(Date, "%d/%m/%Y"))
-
-# Remove the unwanted variables that will no longer be required to free up memory
-rm(hpc)
+hpc_ds <- mutate(hpc_ds, Date = as.Date(Date, "%d/%m/%Y"))
 
 
 # Draw Plot 1
